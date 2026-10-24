@@ -1,0 +1,32 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / Vite
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local generated reports; commit curated reports explicitly when ready
+test-reports/*
+!test-reports/.gitkeep

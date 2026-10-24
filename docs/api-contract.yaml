@@ -1,0 +1,351 @@
+openapi: 3.1.0
+info:
+  title: Car Dealership Inventory API
+  version: 0.1.0
+  description: Proposed Phase 1 contract for review. This is not yet an implemented API.
+servers:
+  - url: http://localhost:8000
+    description: Local development
+tags:
+  - name: Authentication
+  - name: Vehicles
+security: []
+paths:
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a regular user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registered user (password is never returned)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate and issue an access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Signed bearer access token and user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/vehicles:
+    get:
+      tags: [Vehicles]
+      summary: List inventory, including unavailable vehicles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Paginated inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehiclePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Vehicles]
+      summary: Create a vehicle (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleCreate'
+      responses:
+        '201':
+          description: Created vehicle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/vehicles/search:
+    get:
+      tags: [Vehicles]
+      summary: Search inventory using combined optional filters
+      description: Make/model use case-insensitive partial matching; category uses case-insensitive exact matching. Price boundaries are inclusive. A minimum above maximum is rejected.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: make
+          in: query
+          schema: { type: string, minLength: 1 }
+        - name: model
+          in: query
+          schema: { type: string, minLength: 1 }
+        - name: category
+          in: query
+          schema: { type: string, minLength: 1 }
+        - name: min_price
+          in: query
+          schema: { $ref: '#/components/schemas/Money' }
+        - name: max_price
+          in: query
+          schema: { $ref: '#/components/schemas/Money' }
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Matching inventory page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehiclePage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/vehicles/{vehicle_id}:
+    parameters:
+      - $ref: '#/components/parameters/VehicleId'
+    put:
+      tags: [Vehicles]
+      summary: Replace editable vehicle fields (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdate'
+      responses:
+        '200':
+          description: Updated vehicle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [Vehicles]
+      summary: Delete a vehicle (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '204': { description: Vehicle deleted; empty response body }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/vehicles/{vehicle_id}/purchase:
+    parameters:
+      - $ref: '#/components/parameters/VehicleId'
+    post:
+      tags: [Vehicles]
+      summary: Purchase one unit (authenticated user)
+      description: Performs an atomic conditional decrement. A failed request never changes stock. No quantity field is accepted; one request buys one unit.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Updated vehicle after purchase
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Vehicle exists but has no stock
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /api/vehicles/{vehicle_id}/restock:
+    parameters:
+      - $ref: '#/components/parameters/VehicleId'
+    post:
+      tags: [Vehicles]
+      summary: Add stock (admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Updated vehicle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    VehicleId:
+      name: vehicle_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Offset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  schemas:
+    Money:
+      type: number
+      minimum: 0
+      multipleOf: 0.01
+      description: Nonnegative decimal amount with at most two fractional digits.
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12, writeOnly: true }
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, writeOnly: true }
+    User:
+      type: object
+      required: [id, email, role, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string, enum: [user, admin] }
+        created_at: { type: string, format: date-time }
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in, user]
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, enum: [bearer] }
+        expires_in: { type: integer, description: Lifetime in seconds }
+        user: { $ref: '#/components/schemas/User' }
+    VehicleCreate:
+      type: object
+      additionalProperties: false
+      required: [make, model, category, price, quantity]
+      properties:
+        make: { type: string, minLength: 1, maxLength: 100 }
+        model: { type: string, minLength: 1, maxLength: 100 }
+        category: { type: string, minLength: 1, maxLength: 50 }
+        price: { $ref: '#/components/schemas/Money' }
+        quantity: { type: integer, minimum: 0 }
+    VehicleUpdate:
+      allOf:
+        - $ref: '#/components/schemas/VehicleCreate'
+    Vehicle:
+      allOf:
+        - $ref: '#/components/schemas/VehicleCreate'
+        - type: object
+          required: [id, created_at, updated_at]
+          properties:
+            id: { type: string, format: uuid }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+    VehiclePage:
+      type: object
+      required: [items, offset, limit, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Vehicle' }
+        offset: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  message: { type: string }
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated user lacks the required role
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource does not exist
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Resource conflicts with existing state, such as duplicate email
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

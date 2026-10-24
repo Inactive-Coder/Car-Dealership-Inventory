@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "car-dealership-inventory-api"
+version = "0.1.0"
+description = "FastAPI backend for the Car Dealership Inventory System"
+requires-python = ">=3.12"
+dependencies = [
+  "alembic>=1.13,<2",
+  "fastapi>=0.115,<1",
+  "pydantic-settings>=2.6,<3",
+  "psycopg[binary]>=3.2,<4",
+  "sqlalchemy>=2.0.36,<3",
+  "uvicorn[standard]>=0.32,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27,<1",
+  "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
