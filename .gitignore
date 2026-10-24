@@ -30,3 +30,4 @@ Thumbs.db
 # Local generated reports; commit curated reports explicitly when ready
 test-reports/*
 !test-reports/.gitkeep
+docs/implementation-plan.md
