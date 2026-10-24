@@ -9,9 +9,12 @@ description = "FastAPI backend for the Car Dealership Inventory System"
 requires-python = ">=3.12"
 dependencies = [
   "alembic>=1.13,<2",
+  "email-validator>=2.2,<3",
   "fastapi>=0.115,<1",
+  "PyJWT>=2.10,<3",
   "pydantic-settings>=2.6,<3",
   "psycopg[binary]>=3.2,<4",
+  "pwdlib[argon2]>=0.2,<1",
   "sqlalchemy>=2.0.36,<3",
   "uvicorn[standard]>=0.32,<1",
 ]
@@ -30,6 +33,7 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = ["integration: requires an isolated PostgreSQL test database"]
 
 [tool.coverage.run]
 source = ["app"]

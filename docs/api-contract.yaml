@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Car Dealership Inventory API
   version: 0.1.0
-  description: Proposed Phase 1 contract for review. This is not yet an implemented API.
+  description: Contract for the implemented backend API. Frontend integration remains in progress.
 servers:
   - url: http://localhost:8000
     description: Local development
@@ -11,6 +11,20 @@ tags:
   - name: Vehicles
 security: []
 paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Check API process health
+      responses:
+        '200':
+          description: API process is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [ok] }
   /api/auth/register:
     post:
       tags: [Authentication]
