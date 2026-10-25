@@ -9,7 +9,7 @@ function AuthFrame({ children, eyebrow }: { children: React.ReactNode; eyebrow: 
       <section className="auth-story" aria-label="About the dealership">
         <Link className="brand-lockup" to="/login" aria-label="Incubyte Motors home">
           <span className="brand-mark" aria-hidden="true">IM</span>
-          <span>Incubyte<span className="brand-light">Motors</span></span>
+          <span>Incubyte <span className="brand-light">Motors</span></span>
         </Link>
         <div className="story-copy">
           <p className="eyebrow">Curated inventory. Clear decisions.</p>

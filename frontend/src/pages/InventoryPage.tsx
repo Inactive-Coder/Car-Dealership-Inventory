@@ -58,7 +58,7 @@ export default function InventoryPage() {
       <header className="topbar">
         <Link className="brand-lockup dark-brand" to="/inventory">
           <span className="brand-mark" aria-hidden="true">IM</span>
-          <span>Incubyte<span className="brand-light">Motors</span></span>
+          <span>Incubyte <span className="brand-light">Motors</span></span>
         </Link>
         <div className="account-actions">
           <span className="account-email">{session?.user.email}</span>

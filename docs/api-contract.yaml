@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Car Dealership Inventory API
   version: 0.1.0
-  description: Contract for the implemented backend API. Frontend integration remains in progress.
+  description: Contract for the backend API used by the React frontend.
 servers:
   - url: http://localhost:8000
     description: Local development

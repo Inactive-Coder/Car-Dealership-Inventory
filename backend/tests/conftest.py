@@ -15,10 +15,13 @@ def postgres_test_session_factory():
         pytest.skip("set TEST_DATABASE_URL to run PostgreSQL integration tests")
 
     url = make_url(database_url)
+    development_url = make_url(get_settings().database_url)
     if url.get_backend_name() != "postgresql":
         pytest.fail("TEST_DATABASE_URL must use PostgreSQL")
     if not url.database or not url.database.endswith("_test"):
         pytest.fail("refusing integration test database unless its name ends in _test")
+    if url.database == development_url.database:
+        pytest.fail("TEST_DATABASE_URL must use a database separate from DATABASE_URL")
 
     engine = create_engine(database_url, pool_pre_ping=True)
     Base.metadata.create_all(engine)

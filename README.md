@@ -1,13 +1,13 @@
 # Car Dealership Inventory System
 
-A full-stack inventory management kata. The frontend is still a foundation shell; the backend now implements registration, login, role-protected vehicle management, search, purchasing, and restocking. See [the implementation plan](docs/implementation-plan.md), [requirements](docs/requirements.md), and [the API contract](docs/api-contract.yaml).
+A full-stack dealership inventory application. Users can register, sign in, search vehicles, and complete a demo checkout before confirming a one-unit purchase. Administrators can create, update, delete, and restock vehicles. PostgreSQL-backed inventory updates are transaction-safe. See [the implementation plan](docs/implementation-plan.md), [requirements](docs/requirements.md), and [the API contract](docs/api-contract.yaml).
 
 ## Technology
 
 - Frontend: React, TypeScript, Vite, React Router, Tailwind CSS.
 - Backend: Python 3.12+, FastAPI, SQLAlchemy 2.x, Alembic, Pydantic.
 - Database: PostgreSQL 16 using Docker Compose for local development.
-- Tests: Pytest/HTTPX and Vitest/React Testing Library (feature tests will be added test-first).
+- Tests: Pytest/HTTPX and Vitest/React Testing Library.
 
 ## Prerequisites
 
@@ -78,36 +78,37 @@ A full-stack inventory management kata. The frontend is still a foundation shell
 
 ## Verification status
 
-Backend verification on 2026-10-25 used Python 3.14.3:
+Verification on 2026-10-25 used Python 3.14.3 and the configured PostgreSQL test database:
 
-```text
-python -m pytest --cov=app --cov-report=term-missing -q
-30 passed; total backend application coverage: 88%.
-PostgreSQL auth/vehicle workflow and concurrency integration tests passed against dealership_test.
+| Check | Result |
+| --- | --- |
+| `cd backend; python -m pytest --cov=app --cov-report=term-missing -q` | 31 passed; 88% total application coverage |
+| `cd backend; python -m pytest -q -m integration` | 4 passed; 27 deselected |
+| `cd backend; python -m pytest -q tests/test_postgres_api_e2e.py` | 1 isolated PostgreSQL API workflow passed |
+| `cd frontend; npm test` | 15 passed |
+| `cd frontend; npm run typecheck` | Passed |
+| `cd frontend; npm run lint` | Passed with no warnings |
+| `cd frontend; npm run build` | Passed |
+| `git diff --check` | Passed |
 
-python -m compileall -q app alembic tests
-Passed.
-
-python -m alembic upgrade head --sql
-Passed; generated offline SQL.
-
-python -m alembic upgrade head
-Passed; applied 0001_create_users and 0002_create_vehicles to dealership.
-
-python -m alembic current
-0002_create_vehicles (head).
-```
-
-`TEST_DATABASE_URL` points to the separate `dealership_test` database. The concurrent purchase test confirmed one of two simultaneous requests succeeds while the other receives out-of-stock, leaving stock at zero. Additional PostgreSQL workflow tests verified user persistence/password hashing and vehicle create/search/update/purchase/restock/delete flows. Remaining route/service unit tests use fake SQLAlchemy sessions. The frontend scaffold defines `npm test`, `npm run lint`, `npm run typecheck`, and `npm run build`; those checks have not yet been run.
+PostgreSQL workflow tests cover authentication, admin vehicle lifecycle, search, purchase, restock, delete, and concurrent purchase behavior against the isolated `dealership_test` database. The repeatable API E2E test registers/logs in a user, provisions/logs in a test admin, searches, verifies no stock change before purchase confirmation, then checks purchase, out-of-stock, restock, update, and delete through HTTPX. A live browser run against a temporary API configured to `dealership_test` also passed registration/login, filtering, cancel/confirm purchase with stock update, and admin create/update/restock/delete. Temporary records and test processes were removed. See the [Phase 5 integration report](test-reports/phase-5-integration.md) for exact setup and results.
 
 ## Screenshots
 
-Screenshots of the finished application will be added after the frontend workflows are implemented and visually verified.
+Login and registration screenshots captured from the running frontend:
+
+![Login page](screenshots/login-desktop.png)
+
+![Registration page](screenshots/register-desktop.png)
+
+![Inventory dashboard with administrator controls](screenshots/dashboard-admin-desktop.png)
+
+![Demo checkout confirmation](screenshots/checkout-confirmation-desktop.png)
 
 ## My AI Usage
 
-OpenAI Codex has assisted with repository planning, the API contract, frontend/backend scaffolding, backend authentication and inventory implementation, tests, migrations, and setup documentation. Changes are reviewed against `docs/requirements.md` and the API contract. The registration, login, and first protected-inventory tests were run before their routes existed and failed with the expected 404; implementation then made them pass. Several later CRUD, search, and stock tests were added after implementation, so they do not demonstrate the full required Red-Green-Refactor sequence. PostgreSQL workflow and concurrency tests now verify real persistence and competing stock updates against the separate `dealership_test` database. Both Alembic revisions are applied to `dealership`. Codex caught and corrected a malformed backend database URL and missing frontend env file during setup verification. Phase 4 frontend workflows and final quality checks remain outstanding.
+OpenAI Codex assisted with planning, API-contract work, backend authentication and inventory implementation, frontend workflows, tests, migration/setup work, and documentation. Generated changes were checked against `docs/requirements.md` and the API contract, then reviewed through pytest, Vitest, type-checking, linting, builds, live API requests, and an isolated browser workflow. The test-first process was followed for the initial authentication slice and the payment-confirmation UI; several later backend CRUD/search/stock tests were written after implementation, so the complete Red-Green-Refactor history is not demonstrated. Codex helped find setup and test-harness issues, including a malformed database URL, missing Vite environment typing, and an IPv4/IPv6 mismatch during isolated browser testing. Human intervention supplied PostgreSQL access and confirmed the desired INR display and demo-only checkout. No payment service is connected. Raw conversation records in `PROMPTS.md` still contain placeholders and must be replaced with authentic logs or links before submission; no conversations were fabricated.
 
 ## Known limitations
 
-The frontend is still a placeholder page. PostgreSQL persistence is implemented and migrations are applied. Integration coverage exercises authentication, vehicle management/search, stock workflows, and concurrent purchasing. Frontend workflows, screenshots, final test reports, and replacement of the `PROMPTS.md` placeholders with authentic conversation logs or links remain outstanding.
+The checkout is a demo confirmation only and does not collect payment details or charge money. Screenshots cover login, registration, the admin dashboard, and checkout. The live browser workflow ran against a temporary backend connected to `dealership_test`, not the development database. `PROMPTS.md` still needs authentic raw conversation logs or public chat links before final submission. Backend coverage is 88%; unit coverage gaps are concentrated in CLI/configuration and some auth/service branches, and the project records the historical TDD gap above.
